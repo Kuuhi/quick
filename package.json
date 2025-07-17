@@ -1,7 +1,26 @@
 {
+  "name": "quick",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/Kuuhi/quick#readme",
+  "bugs": {
+    "url": "https://github.com/Kuuhi/quick/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kuuhi/quick.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
     "discord.js": "^14.21.0",
     "dotenv": "^17.2.0",
     "sqlite3": "^5.1.7"
-  }
+  },
+  "devDependencies": {}
 }
