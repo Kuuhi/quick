@@ -84,10 +84,7 @@ async function getMessageFromUrl(messageUrl) {
     const regex = /https:\/\/discord\.com\/channels\/(\d+)\/(\d+)\/(\d+)/;
     const match = messageUrl.match(regex);
 
-    if (!match) {
-        console.error('無効なメッセージURLです。');
-        return null;
-    }
+    if (!match) return null;
 
     const [, guildId, channelId, messageId] = match;
 
@@ -108,7 +105,6 @@ async function getMessageFromUrl(messageUrl) {
         return message;
 
     } catch (error) {
-        console.error('メッセージの取得中にエラーが発生しました:', error);
         return null;
     }
 }
@@ -773,7 +769,7 @@ const game = {
             maxPlayers: '最大人数',
             showVoteTargets: '投票先の開示',
             villagers: '市民',
-            
+
             seers: '占い師',
             // mediums: '霊媒師',
             hunters: '狩人',
@@ -1331,6 +1327,7 @@ client.on("interactionCreate", async (interaction) => {
                 .addFields(
                     { name: '\u200B', value: '\u200B' },
                 )
+                .setFooter({ text: '\u200B'})
 
             const selectRow = new ActionRowBuilder()
                 .addComponents(
@@ -1437,8 +1434,9 @@ client.on("interactionCreate", async (interaction) => {
                 .setTitle('設定更新')
                 .setDescription(await game.getRoomConfigList(room.roomId))
                 .addFields(
-                    { name: currentConfig, value: `新しい値: ${newValue}` }
-                );
+                    { name: await translateRole(currentConfig) || currentConfig, value: `新しい値: ${newValue}` }
+                )
+                .setFooter({ text: currentConfig });
 
             interaction.update({ embeds: [embed] });
         }
@@ -1461,7 +1459,23 @@ client.on("interactionCreate", async (interaction) => {
 
         if (interaction.customId === 'configRoomSelect') {
 
-            const room = await promisifyDbGet(db, 'SELECT * FROM room WHERE roomId = ?', [player.joinRoomId]);
+            const repliedMessageId = interaction.message.reference.messageId;
+
+            const top = await interaction.channel.messages.fetch(repliedMessageId);
+
+            const room = await promisifyDbGet(db, 'SELECT * FROM room WHERE topUrl = ?', [top.url]);
+
+            const config = JSON.parse(room.config);
+            const currentConfig = interaction.message.embeds[0].footer.text;
+
+            let newValue;
+            if (interaction.customId === 'configRoomLeft') {
+                newValue = Math.max(0, config[currentConfig] - 1);
+            } else {
+                newValue = config[currentConfig] + 1;
+            }
+
+            config[currentConfig] = newValue;
 
             if (interaction.values[0] === 'configRoom_maxPlayers') {
                 const embed = new EmbedBuilder()
@@ -1470,7 +1484,8 @@ client.on("interactionCreate", async (interaction) => {
                     .setDescription(await game.getRoomConfigList(room.roomId))
                     .addFields(
                         { name: '最大人数', value: '0で無制限、1以上で制限あり' }
-                    );
+                    )
+                    .setFooter({ text: 'maxPlayers' });
 
                 interaction.update({ embeds: [embed] });
             } else if (interaction.values[0] === 'configRoom_showVoteTargets') {
@@ -1480,7 +1495,8 @@ client.on("interactionCreate", async (interaction) => {
                     .setDescription(await game.getRoomConfigList(room.roomId))
                     .addFields(
                         { name: '投票先の開示', value: 'trueで開示、falseで非開示' }
-                    );
+                    )
+                    .setFooter({ text: 'showVoteTargets' });
 
                 interaction.update({ embeds: [embed] });
 
@@ -1491,7 +1507,8 @@ client.on("interactionCreate", async (interaction) => {
                     .setDescription(await game.getRoomConfigList(room.roomId))
                     .addFields(
                         { name: '占い師の人数', value: '0以上の整数' }
-                    );
+                    )
+                    .setFooter({ text: 'seers' });
 
                 interaction.update({ embeds: [embed] });
             } else if (interaction.values[0] === 'configRoom_mediums') {
@@ -1501,7 +1518,8 @@ client.on("interactionCreate", async (interaction) => {
                     .setDescription(await game.getRoomConfigList(room.roomId))
                     .addFields(
                         { name: '霊媒師の人数', value: '0以上の整数' }
-                    );
+                    )
+                    .setFooter({ text: 'mediums' });
 
                 interaction.update({ embeds: [embed] });
             } else if (interaction.values[0] === 'configRoom_hunters') {
@@ -1511,7 +1529,8 @@ client.on("interactionCreate", async (interaction) => {
                     .setDescription(await game.getRoomConfigList(room.roomId))
                     .addFields(
                         { name: '狩人の人数', value: '0以上の整数' }
-                    );
+                    )
+                    .setFooter({ text: 'hunters' });
 
                 interaction.update({ embeds: [embed] });
             } else if (interaction.values[0] === 'configRoom_werewolves') {
@@ -1521,7 +1540,8 @@ client.on("interactionCreate", async (interaction) => {
                     .setDescription(await game.getRoomConfigList(room.roomId))
                     .addFields(
                         { name: '人狼の人数', value: '0以上の整数' }
-                    );
+                    )
+                    .setFooter({ text: 'werewolves' });
 
                 interaction.update({ embeds: [embed] });
             } else if (interaction.values[0] === 'configRoom_lunatics') {
@@ -1531,7 +1551,8 @@ client.on("interactionCreate", async (interaction) => {
                     .setDescription(await game.getRoomConfigList(room.roomId))
                     .addFields(
                         { name: '狂人の人数', value: '0以上の整数' }
-                    );
+                    )
+                    .setFooter({ text: 'lunatics' });
 
                 interaction.update({ embeds: [embed] });
             } else if (interaction.values[0] === 'configRoom_foxes') {
@@ -1541,7 +1562,8 @@ client.on("interactionCreate", async (interaction) => {
                     .setDescription(await game.getRoomConfigList(room.roomId))
                     .addFields(
                         { name: '狐の人数', value: '0以上の整数' }
-                    );
+                    )
+                    .setFooter({ text: 'foxes' });
 
                 interaction.update({ embeds: [embed] });
             }
