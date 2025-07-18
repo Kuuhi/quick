@@ -773,8 +773,8 @@ const game = {
             seers: '占い師',
             // mediums: '霊媒師',
             hunters: '狩人',
-            werewolves: '人狼'
-            // lunatics: '狂人',
+            werewolves: '人狼',
+            lunatics: '狂人'
             // foxes: '狐'
         };
 
@@ -1364,12 +1364,12 @@ client.on("interactionCreate", async (interaction) => {
                                 label: '人狼の人数',
                                 description: '人狼の人数を設定します',
                                 value: 'configRoom_werewolves',
+                            },
+                            {
+                                label: '狂人の人数',
+                                description: '狂人の人数を設定します',
+                                value: 'configRoom_lunatics',
                             }
-                            // {
-                            //     label: '狂人の人数',
-                            //     description: '狂人の人数を設定します',
-                            //     value: 'configRoom_lunatics',
-                            // },
                             // {
                             //     label: '狐の人数',
                             //     description: '狐の人数を設定します',
