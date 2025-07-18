@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, MessageFlags, ButtonStyle, PermissionsBitField, StringSelectMenuBuilder } = require('discord.js');
+const { Client, GatewayIntentBits, Partials, EmbedBuilder, ActionRowBuilder, ButtonBuilder, MessageFlags, ButtonStyle, PermissionsBitField, StringSelectMenuBuilder, InteractionWebhook } = require('discord.js');
 
 const client = new Client({
     intents: [
@@ -787,6 +787,21 @@ const game = {
         }
 
         return result.trim();
+    },
+    async getWerewolves(roomId) {
+        if (!roomId) return null;
+
+        const room = await promisifyDbGet(db, 'SELECT players FROM room WHERE roomId = ?', [roomId]); //
+        if (!room) return null;
+
+        const players = JSON.parse(room.players);
+        const werewolves = players.filter(p => p.role === 'werewolves' && p.isAlive);
+
+        if (werewolves.length === 0) {
+            return;
+        } else {
+            return werewolves.map(p => `<@${p.playerId}>`).join('\n');
+        }
     }
 }
 
@@ -1327,7 +1342,7 @@ client.on("interactionCreate", async (interaction) => {
                 .addFields(
                     { name: '\u200B', value: '\u200B' },
                 )
-                .setFooter({ text: '\u200B'})
+                .setFooter({ text: '\u200B' })
 
             const selectRow = new ActionRowBuilder()
                 .addComponents(
@@ -1442,17 +1457,34 @@ client.on("interactionCreate", async (interaction) => {
         }
 
         if (interaction.customId === 'chuckleRole') {
-            if (!player || !player.joinRoomId) return interaction.reply({ content: '参加している部屋がありません', flags: MessageFlags.Ephemeral });
+            if (!player || !player.joinRoomId) return interaction.reply({ content: '参加している部屋がありません', flags: MessageFlags.Ephemeral }); //
 
             const room = await promisifyDbGet(db, 'SELECT * FROM room WHERE roomId = ?', [player.joinRoomId]);
             if (!room) return interaction.reply({ content: '現在参加している部屋が見つかりません', flags: MessageFlags.Ephemeral });
 
             const players = JSON.parse(room.players);
             const playerData = players.find(p => p.playerId === player.userId);
-            if (!playerData || !playerData.role) return interaction.reply({ content: 'あなたの役職が設定されていません', flags: MessageFlags.Ephemeral });
+            if (!playerData || !playerData.role) return interaction.reply({ content: 'あなたの役職が設定されていません', flags: MessageFlags.Ephemeral }); //
 
-            interaction.reply({ content: `あなたの役職は **${await translateRole(playerData.role)}** です`, flags: MessageFlags.Ephemeral });
+            let replyContent = `あなたの役職は **${await translateRole(playerData.role)}** です`;
+
+            if (playerData.role === 'werewolves') {
+                const werewolvesList = await game.getWerewolves(room.roomId);
+                if (werewolvesList) {
+                    replyContent += `\n\n仲間は以下の通りです:\n${werewolvesList}`;
+                }
+            }
+
+            interaction.reply({ content: replyContent, flags: MessageFlags.Ephemeral }); //
         }
+
+        /*
+        if (interaction.customId === 'necromancy') {
+            if (!player) return;
+
+            if (game.getPlayerRole(interaction.author.id) !== 'mediums') return;
+        }
+            */
     }
 
     if (interaction.isStringSelectMenu()) {
